@@ -105,6 +105,7 @@ HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   {
 	  HAL_Delay(10);
 	  light = abs((ix++ % 200) -100) * step;
+	  //윗 줄 모드 연산
 	  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, light);
 	  if( ++run > 500) {
 		  run = 0;
