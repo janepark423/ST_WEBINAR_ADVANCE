@@ -18,8 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include <stdlib.h>
-#include "stm32g4xx_hal_pwr.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -34,7 +32,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 const uint16_t step = 400;
-uint16_t light = 0;
+uint16_t light[200] = {0,};
 uint32_t run = 0;
 /* USER CODE END PD */
 
@@ -45,6 +43,7 @@ uint32_t run = 0;
 
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim2;
+DMA_HandleTypeDef hdma_tim2_ch1;
 
 /* USER CODE BEGIN PV */
 
@@ -53,6 +52,7 @@ TIM_HandleTypeDef htim2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -62,6 +62,12 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	if(GPIO_Pin == GPIO_PIN_13){__NOP();}
+}
+
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
+{
+	if (htim == &htim2)
+		HAL_TIM_PWM_Start_DMA(htim, TIM_CHANNEL_1, (uint32_t *)light, 200);
 }
 /* USER CODE END 0 */
 
@@ -93,28 +99,33 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-int ix = 0;
-HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+
+  for (int ix =0; ix <200; ++ix)
+	  light[ix] = abs(ix - 100) * step;
+  HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, (uint32_t *)light, 200);
+//int ix = 0;
+//HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_Delay(10);
-	  light = abs((ix++ % 200) -100) * step;
-	  //윗 줄 모드 연산
-	  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, light);
-	  //CCR CHANNEL1을 제어하겠다는 뜻
-
-	  if( ++run > 500) {
-		  run = 0;
-		  HAL_SuspendTick();
-		  HAL_PWREx_EnterSTOP1Mode(PWR_STOPENTRY_WFI);
-		  SystemClock_Config();
-	  }
+//	  HAL_Delay(10);
+//	  light = abs((ix++ % 200) -100) * step;
+//	  //?�� �? 모드 ?��?��
+//	  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, light);
+//	  //CCR CHANNEL1?�� ?��?��?��겠다?�� ?��
+//
+//	  if( ++run > 500) {
+//		  run = 0;
+//		  HAL_SuspendTick();
+//		  HAL_PWREx_EnterSTOP1Mode(PWR_STOPENTRY_WFI);
+//		  SystemClock_Config();
+//	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -224,6 +235,23 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMAMUX1_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
 }
 
