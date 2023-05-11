@@ -107,6 +107,8 @@ HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 	  light = abs((ix++ % 200) -100) * step;
 	  //윗 줄 모드 연산
 	  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, light);
+	  //CCR CHANNEL1을 제어하겠다는 뜻
+
 	  if( ++run > 500) {
 		  run = 0;
 		  HAL_SuspendTick();
